@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -32,11 +33,20 @@ type SatelliteInfo struct {
 }
 
 func main() {
+	var arg string
+	timeLength := 1000
+
+	//Get the length of time for the ticker to run at
+	if len(os.Args) >= 2 {
+		arg = os.Args[1]
+		timeLength, _ = strconv.Atoi(arg)
+	}
 
 	//https://www.tutorialspoint.com/how-to-use-tickers-in-golang
 	//TODO: Figure out how to run it once, since it waits for a tick before running
-	ticker := time.NewTicker(10000 * time.Millisecond)
+	ticker := time.NewTicker(time.Duration(timeLength) * time.Millisecond)
 
+	//Loop through the ticker interval until program stops
 	for _ = range ticker.C {
 
 		var tag string
