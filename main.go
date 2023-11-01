@@ -66,10 +66,10 @@ func main() {
 				}
 			} else {
 				// In ApiStructs.go
-				var satelliteInfo SatelliteInfo
-				json.Unmarshal(responseBytes, &satelliteInfo)
+				var satelliteInfoBase SatelliteInfo
+				json.Unmarshal(responseBytes, &satelliteInfoBase)
 
-				satelliteInfo.Timestamp = fmt.Sprint(satelliteInfo.Positions[0].Timestamp)
+				satelliteInfo := transformApiResponse(satelliteInfoBase)
 
 				//err := logglyClient.EchoSend("info", satelliteInfo.Info.Satname+" Latitude: "+fmt.Sprint(satelliteInfo.Positions[0].Satlatitude)+" Longitude: "+fmt.Sprint(satelliteInfo.Positions[0].Satlongitude))
 
@@ -86,7 +86,7 @@ func main() {
 					SharedConfigState: session.SharedConfigEnable,
 				}))
 
-				sess.Config.Region = aws.String("us-east-2")
+				sess.Config.Region = aws.String("us-east-1")
 				// Create DynamoDB client
 				svc := dynamodb.New(sess)
 
