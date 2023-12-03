@@ -27,6 +27,8 @@ func main() {
 		timeLength, _ = strconv.Atoi(arg)
 	}
 
+	fmt.Printf("Starting agent, time length (in ms): " + fmt.Sprint(timeLength) + "\n")
+
 	//https://www.tutorialspoint.com/how-to-use-tickers-in-golang
 	ticker := time.NewTicker(time.Duration(timeLength) * time.Millisecond)
 

@@ -31,4 +31,4 @@ COPY --from=build /go/src/my-golang-source-code/main ./
 RUN env && pwd && find .
 
 # Start the application
-CMD ["./main", "10000"]
+CMD ["./main", "600000"]
