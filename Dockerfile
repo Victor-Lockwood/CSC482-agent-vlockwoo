@@ -1,6 +1,34 @@
-FROM golang:latest
+# Start the Go app build
+FROM public.ecr.aws/docker/library/golang:latest AS build
 
-WORKDIR /app
-COPY main.go go.mod go.sum ApiStructs.go ./
+# Copy source
+WORKDIR /go/src/my-golang-source-code
+COPY . .
 
-CMD ["go", "run", "main.go", "10000"]
+# Get required modules
+RUN go mod tidy
+
+# Build a statically-linked Go binary for Linux
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o main .
+
+# New build phase -- create binary-only image
+FROM alpine:latest
+
+# Add support for HTTPS
+RUN apk update; \
+    apk upgrade; \
+    apk add ca-certificates
+
+WORKDIR /root/
+
+# Copy files from previous build container
+COPY --from=build /go/src/my-golang-source-code/main ./
+
+# Add environment variables
+# ENV ...
+
+# Check results
+RUN env && pwd && find .
+
+# Start the application
+CMD ["./main", "10000"]

@@ -12,19 +12,19 @@ can be found [here](https://github.com/Victor-Lockwood/server-vlockwoo).
 Run these in the same directory as the Dockerfile.
 
 ### Build the Image
-`sudo docker build -t poller_test .`
+`docker build -t agent .`
 
 ### Run the Container
-`sudo docker run -e N2YO_KEY=<key> -e LOGGLY_TOKEN=<token> poller_test`
+`docker run -e N2YO_KEY=<key> -e AWS_SECRET_ACCESS_KEY=<key> -e AWS_ACCESS_KEY_ID=<key> -e LOGGLY_TOKEN=<token> agent`
 
 ### Stop Container
 Get the running container name:
-`sudo docker ps`
+`docker ps`
 Then:
-`sudo docker stop <container name>`
+`docker stop <container name>`
 
 ### Clear Unused Containers
-`sudo docker rm $(sudo docker ps -aq)`
+`docker rm $(sudo docker ps -aq)`
 
 ### Clear Unused Images
-`sudo docker rmi  $(sudo docker images -q)`
+`docker rmi  $(sudo docker images -q)`
