@@ -32,25 +32,47 @@ func main() {
 	//https://www.tutorialspoint.com/how-to-use-tickers-in-golang
 	ticker := time.NewTicker(time.Duration(timeLength) * time.Millisecond)
 
+	var tag string
+	var n2yoKey string
+	var requestUrl string
+
+	// Instantiate the loggly_client
+	logglyClient := loggly.New(tag)
+
+	tag = "Poller"
+	n2yoKey = os.Getenv("N2YO_KEY")
+	requestUrl = "https://api.n2yo.com/rest/v1/satellite/positions/25544/41.702/-76.014/0/2/&apiKey=" + n2yoKey
+
+	var responsePoller *http.Response
+	var contentLength int64
+
+	var satelliteInfoBase SatelliteInfo
+	var satelliteInfo SatelliteInfoDynamo
+
+	var response *dynamodb.PutItemOutput
+	var av map[string]*dynamodb.AttributeValue
+	var input *dynamodb.PutItemInput
+
+	var result []byte
+
+	// Initialize a session that the SDK will use to load
+	// credentials from the shared credentials file ~/.aws/credentials
+	// and region from the shared configuration file ~/.aws/config.
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
+
+	sess.Config.Region = aws.String("us-east-1")
+	// Create DynamoDB client
+	svc := dynamodb.New(sess)
+
 	//Loop through the ticker interval until program stops
 	for _ = range ticker.C {
 
-		var tag string
-		var n2yoKey string
-		var requestUrl string
-
-		// Instantiate the loggly_client
-		logglyClient := loggly.New(tag)
-
-		tag = "Poller"
-		n2yoKey = os.Getenv("N2YO_KEY")
-		requestUrl = "https://api.n2yo.com/rest/v1/satellite/positions/25544/41.702/-76.014/0/2/&apiKey=" + n2yoKey
-
-		responsePoller, _ := http.Get(requestUrl)
-		contentLength := responsePoller.ContentLength
+		responsePoller, _ = http.Get(requestUrl)
+		contentLength = responsePoller.ContentLength
 
 		if responsePoller.StatusCode == http.StatusOK {
-			defer responsePoller.Body.Close()
 
 			//Used this: https://stackoverflow.com/questions/17156371/how-to-get-json-response-from-http-get
 			responseBytes, responseError := io.ReadAll(responsePoller.Body)
@@ -61,35 +83,26 @@ func main() {
 				}
 			} else {
 				// In ApiStructs.go
-				var satelliteInfoBase SatelliteInfo
+
 				json.Unmarshal(responseBytes, &satelliteInfoBase)
 
-				satelliteInfo := transformApiResponse(satelliteInfoBase)
+				satelliteInfo = transformApiResponse(satelliteInfoBase)
 
 				logglyClient.EchoSend("info", "Content Length: "+fmt.Sprint(contentLength))
 
-				// Initialize a session that the SDK will use to load
-				// credentials from the shared credentials file ~/.aws/credentials
-				// and region from the shared configuration file ~/.aws/config.
-				sess := session.Must(session.NewSessionWithOptions(session.Options{
-					SharedConfigState: session.SharedConfigEnable,
-				}))
+				av, _ = dynamodbattribute.MarshalMap(satelliteInfo)
 
-				sess.Config.Region = aws.String("us-east-1")
-				// Create DynamoDB client
-				svc := dynamodb.New(sess)
-
-				av, _ := dynamodbattribute.MarshalMap(satelliteInfo)
-
-				input := &dynamodb.PutItemInput{
+				input = &dynamodb.PutItemInput{
 					Item:      av,
 					TableName: aws.String("vlockwoo-satellites"),
 				}
 
-				response, _ := svc.PutItem(input)
-				result, _ := json.Marshal(response)
+				response, _ = svc.PutItem(input)
+				result, _ = json.Marshal(response)
 				fmt.Printf(string(result))
 			}
+
+			responsePoller.Body.Close()
 		} else {
 			logglyClient.EchoSend("error", "Got unexpected response while polling")
 		}
